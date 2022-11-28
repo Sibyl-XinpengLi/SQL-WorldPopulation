@@ -1,0 +1,284 @@
+/*
+1960-2021 World Population Data Exploration （Part 1)
+
+Skills used: UTF-8 encode the CSV file using CotEditor, Joins, CTEs, Temp Tables, Aggregate Functions, Creating Views
+
+Questions:
+1. What's the percentage of different income levels among the top 10 countries?
+2. Which 10 countries have the least number of people in 2021?
+3. What's the percentage of different income levels among the bottom 10 countries?
+4. What are the yearly propulation growth rate of the world in the past 10 years?
+5. What is the global population growth rate between 1960 and 2021？
+6. What the propulation growth rate of each country between 1960 and 2021? Which country is witnessing the highest population growth and which one has the lowest?
+
+Questions for Part 2 after joining the land area data:
+- Which country has an extraordinary number for the population?
+- Which is the most densely populated country in the world?
+
+*/
+
+
+USE WorldPopulation;
+
+SELECT * FROM population;
+DELETE FROM population WHERE `Country Name` = "Country Name";
+# Remove the duplicated headers
+
+SELECT * FROM countries;
+
+# Merge the "Population" and "Country" tables with the primary key column "Country Code" and import the region and each country's income level into the Population table
+## To analyse the relationship between population and income level
+SELECT 
+	p.*, 
+    c.Region,
+    c.IncomeGroup 
+FROM population AS p
+LEFT JOIN countries AS c
+ON p.`Country Code` = c.`Country Code`;
+
+
+# Create a new table after merging the "Population" table and a part of the "Countries", as the new table will be frequently used.
+DROP TABLE IF EXISTS pop_country;
+CREATE TABLE pop_country AS
+SELECT 
+	p.*, 
+    c.Region,
+    c.IncomeGroup 
+FROM population AS p
+LEFT JOIN countries AS c
+ON p.`Country Code` = c.`Country Code`;
+
+
+# Look for null values
+SELECT * FROM pop_country
+WHERE 
+	`Country Name` IS NULL OR `Country Name`=''
+    OR `Country Code` IS NULL OR `Country Code`=''
+    OR `Indicator Name` IS NULL OR `Indicator Name`=''
+    OR `Indicator Code` IS NULL OR `Indicator Code`=''
+    OR Region IS NULL OR Region=''
+    OR IncomeGroup IS NULL OR IncomeGroup=''; 
+-- Observed: Several records in "Country Name" don't have a corresponding region value are not individual countries. As the analysis focuses on the population of each country, non-country records should ignored.
+
+
+# Veryfy the world population of 2021 to confirm the susppicion above 
+SELECT SUM(`2021`) 
+FROM (
+		SELECT * FROM pop_country
+		WHERE Region != '' OR Region IS NULL -- is null or is not null
+		ORDER BY `2021` DESC) AS pop_countryonly;
+-- Resulted in 7.8 billion population for 2021. The process is correct.
+
+
+## Look at each country's population in 2021 in descending order
+SELECT 
+	`Country Name`, 
+	`Country Code`, 
+    Region, 
+    IncomeGroup, 
+    `2021`
+FROM pop_country
+WHERE Region IS NULL OR Region !=''
+ORDER BY `2021` DESC;
+
+
+
+## Which 10 countries have the highest population in 2021?
+SELECT `Country Name`, CONCAT(ROUND(`2021`/1000000,0), "M"), `IncomeGroup`
+FROM pop_country
+WHERE Region IS NULL OR Region !=''
+ORDER BY `2021` DESC
+LIMIT 10;
+-- Top 10 countries are:
+-- 'China','1412M','Upper middle income'
+-- 'India','1393M','Lower middle income'
+-- 'United States','332M','High income'
+-- 'Indonesia','276M','Lower middle income'
+-- 'Pakistan','225M','Lower middle income'
+-- 'Brazil','214M','Upper middle income'
+-- 'Nigeria','211M','Lower middle income'
+-- 'Bangladesh','166M','Lower middle income'
+-- 'Russian Federation','143M','Upper middle income'
+-- 'Mexico','130M','Upper middle income'
+
+
+## What's the percentage of different income levels among the top 10 countries?
+SELECT 
+	`IncomeGroup`, 
+    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+FROM (
+	SELECT `Country Name`, `2021` , `IncomeGroup`
+	FROM pop_country
+	WHERE Region IS NULL OR Region !=''
+	ORDER BY `2021` DESC
+	LIMIT 10) AS top10
+GROUP BY IncomeGroup;
+-- 'Upper middle income','40%'; 'Lower middle income','50%'; 'High income','10%'
+
+
+
+## Which 10 countries have the least number of people in 2021?
+SELECT `Country Name`, `2021`, `IncomeGroup`
+FROM pop_country
+WHERE Region IS NULL OR Region !=''
+ORDER BY `2021` ASC
+LIMIT 10;
+-- 'Nauru','10873','High income'
+-- 'Tuvalu','11925','Upper middle income'
+-- 'Palau','18174','Upper middle income'
+-- 'British Virgin Islands','30423','High income'
+-- 'Gibraltar','33691','High income'
+-- 'San Marino','34010','High income'
+-- 'Liechtenstein','38254','High income'
+-- 'Turks and Caicos Islands','39226','High income'
+-- 'St. Martin (French part)','39239','High income'
+-- 'Monaco','39520','High income'
+
+
+## What's the percentage of different income levels among the bottom 10 countries?
+SELECT 
+	`IncomeGroup`, 
+    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+FROM (
+	SELECT `Country Name`, `2021` , `IncomeGroup`
+	FROM pop_country
+	WHERE Region != '' OR Region IS NULL 
+	ORDER BY `2021` ASC
+	LIMIT 10) AS bottom10
+GROUP BY IncomeGroup;
+-- 'High income','8','80%'; 'Upper middle income','2','20%'
+
+
+## What the yearly propulation growth rate of the world in the past 10 years
+SELECT 
+    CONCAT(ROUND((SUM(`2011`) - SUM(`2010`))/SUM(`2010`)*100,1), "%") AS 2011_R,
+    CONCAT(ROUND((SUM(`2012`) - SUM(`2011`))/SUM(`2011`)*100,1), "%") AS 2012_R,
+    CONCAT(ROUND((SUM(`2013`) - SUM(`2012`))/SUM(`2012`)*100,1), "%") AS 2013_R,
+    CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,1), "%") AS 2014_R,
+    CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,1), "%") AS 2015_R,
+    CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,1), "%") AS 2016_R,
+	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,1), "%") AS 2018_R,
+    CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,1), "%") AS 2019_R,
+    CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,1), "%") AS 2020_R,
+	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
+FROM pop_country
+WHERE Region != '' OR Region IS NULL 
+ORDER BY `2021` DESC;
+-- Results with one decimal place (1.2%) do not reflect a large difference.
+
+# Try with two decimal places
+SELECT 
+    CONCAT(ROUND((SUM(`2011`) - SUM(`2010`))/SUM(`2010`)*100,2), "%") AS 2011_R,
+    CONCAT(ROUND((SUM(`2012`) - SUM(`2011`))/SUM(`2011`)*100,2), "%") AS 2012_R,
+    CONCAT(ROUND((SUM(`2013`) - SUM(`2012`))/SUM(`2012`)*100,2), "%") AS 2013_R,
+    CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,2), "%") AS 2014_R,
+    CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,2), "%") AS 2015_R,
+    CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,2), "%") AS 2016_R,
+	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,2), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,2), "%") AS 2018_R,
+    CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,2), "%") AS 2019_R,
+    CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,2), "%") AS 2020_R,
+	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,2), "%") AS 2021_R
+FROM pop_country
+WHERE Region != '' OR Region IS NULL 
+ORDER BY `2021` DESC;
+-- The growth rate in 2011->1.18%, 2021->1.22%, 2013->1.22%, 2014->1.20%, 2015->1.18%, 2016->1.17%, 2017->1.16%, 2018->1.10%, 2019->1.07%, 2020->1.04%, 2021->0.94%.
+-- The populatin growth rate has been stadily decreasing since the year 2013.
+
+# What is the global population growth rate between 1960 and 2021
+SELECT 
+    CONCAT(ROUND((SUM(`2021`) - SUM(`1960`))/SUM(`1960`)*100,2), "%") AS `2021-1960`
+FROM pop_country
+WHERE Region != '' OR Region IS NULL 
+ORDER BY `2021` DESC;
+-- The world population has increased by 158.27% since 1960.
+
+# What the propulation growth rate of each country between 1960 and 2021? Which country is witnessing the highest population growth and which one has the lowest?
+SELECT 
+    `Country Name`,
+    '1960',
+    '2021',
+    CONCAT(ROUND((SUM(`2021`) - SUM(`1960`))/SUM(`1960`),2), "%") AS `2021-1960`
+FROM pop_country
+WHERE Region != '' OR Region IS NULL 
+GROUP BY `Country Name`
+ORDER BY (SUM(`2021`) - SUM(`1960`))/SUM(`1960`) DESC;
+-- United Arab Emirates is the highest with 107.11%, and Bulgaria has the lowest of -0.12%.
+
+# Look at the population of United Arab Emirates and Bulgaria in 1960 and 2021.
+SELECT `Country Name`, `1960`, `2021` 
+FROM(
+		SELECT * FROM pop_country
+		WHERE Region != '' OR Region IS NULL 
+		ORDER BY `2021` DESC) AS pop_countryonly
+WHERE 
+	`Country Name`= "Bulgaria" 	OR `Country Name` = "United Arab Emirates";
+
+
+# Create view to store data for later visualizations
+CREATE VIEW top10_pop AS
+SELECT `Country Name`, CONCAT(ROUND(`2021`/1000000,0), "M"), `IncomeGroup`
+FROM pop_country
+WHERE Region IS NULL OR Region !=''
+ORDER BY `2021` DESC
+LIMIT 10;
+
+SELECT * FROM top10_pop;
+
+CREATE VIEW top10_income AS
+SELECT 
+	`IncomeGroup`, 
+    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+FROM (
+	SELECT `Country Name`, `2021` , `IncomeGroup`
+	FROM pop_country
+	WHERE Region IS NULL OR Region !=''
+	ORDER BY `2021` DESC
+	LIMIT 10) AS top10
+GROUP BY IncomeGroup;
+
+SELECT * FROM top10_income;
+
+CREATE VIEW bottom10_pop AS
+SELECT `Country Name`, `2021`, `IncomeGroup`
+FROM pop_country
+WHERE Region IS NULL OR Region !=''
+ORDER BY `2021` ASC
+LIMIT 10;
+
+SELECT * FROM bottom10_pop;
+
+CREATE VIEW bottom10_income AS
+SELECT 
+	`IncomeGroup`, 
+    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+FROM (
+	SELECT `Country Name`, `2021` , `IncomeGroup`
+	FROM pop_country
+	WHERE Region != '' OR Region IS NULL 
+	ORDER BY `2021` ASC
+	LIMIT 10) AS bottom10
+GROUP BY IncomeGroup;
+
+SELECT * FROM bottom10_income;
+
+CREATE VIEW yoy_growth AS
+SELECT 
+    CONCAT(ROUND((SUM(`2011`) - SUM(`2010`))/SUM(`2010`)*100,1), "%") AS 2011_R,
+    CONCAT(ROUND((SUM(`2012`) - SUM(`2011`))/SUM(`2011`)*100,1), "%") AS 2012_R,
+    CONCAT(ROUND((SUM(`2013`) - SUM(`2012`))/SUM(`2012`)*100,1), "%") AS 2013_R,
+    CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,1), "%") AS 2014_R,
+    CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,1), "%") AS 2015_R,
+    CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,1), "%") AS 2016_R,
+	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,1), "%") AS 2018_R,
+    CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,1), "%") AS 2019_R,
+    CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,1), "%") AS 2020_R,
+	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
+FROM pop_country
+WHERE Region != '' OR Region IS NULL 
+ORDER BY `2021` DESC;
+
+SELECT * FROM yoy_growth
+
