@@ -27,11 +27,11 @@ DELETE FROM population WHERE `Country Name` = "Country Name";
 SELECT * FROM countries;
 
 # Merge the "Population" and "Country" tables with the primary key column "Country Code" and import the region and each country's income level into the Population table
-## To analyse the relationship between population and income level
+# To analyse the relationship between population and income level
 SELECT 
 	p.*, 
-    c.Region,
-    c.IncomeGroup 
+    	c.Region,
+    	c.IncomeGroup 
 FROM population AS p
 LEFT JOIN countries AS c
 ON p.`Country Code` = c.`Country Code`;
@@ -42,8 +42,8 @@ DROP TABLE IF EXISTS pop_country;
 CREATE TABLE pop_country AS
 SELECT 
 	p.*, 
-    c.Region,
-    c.IncomeGroup 
+    	c.Region,
+    	c.IncomeGroup 
 FROM population AS p
 LEFT JOIN countries AS c
 ON p.`Country Code` = c.`Country Code`;
@@ -53,20 +53,20 @@ ON p.`Country Code` = c.`Country Code`;
 SELECT * FROM pop_country
 WHERE 
 	`Country Name` IS NULL OR `Country Name`=''
-    OR `Country Code` IS NULL OR `Country Code`=''
-    OR `Indicator Name` IS NULL OR `Indicator Name`=''
-    OR `Indicator Code` IS NULL OR `Indicator Code`=''
-    OR Region IS NULL OR Region=''
-    OR IncomeGroup IS NULL OR IncomeGroup=''; 
+    	OR `Country Code` IS NULL OR `Country Code`=''
+    	OR `Indicator Name` IS NULL OR `Indicator Name`=''
+    	OR `Indicator Code` IS NULL OR `Indicator Code`=''
+    	OR Region IS NULL OR Region=''
+    	OR IncomeGroup IS NULL OR IncomeGroup=''; 
 -- Observed: Several records in "Country Name" don't have a corresponding region value are not individual countries. As the analysis focuses on the population of each country, non-country records should ignored.
 
 
 # Veryfy the world population of 2021 to confirm the susppicion above 
 SELECT SUM(`2021`) 
 FROM (
-		SELECT * FROM pop_country
-		WHERE Region != '' OR Region IS NULL -- is null or is not null
-		ORDER BY `2021` DESC) AS pop_countryonly;
+	SELECT * FROM pop_country
+	WHERE Region != '' OR Region IS NULL -- is null or is not null
+	ORDER BY `2021` DESC) AS pop_countryonly;
 -- Resulted in 7.8 billion population for 2021. The process is correct.
 
 
@@ -74,9 +74,9 @@ FROM (
 SELECT 
 	`Country Name`, 
 	`Country Code`, 
-    Region, 
-    IncomeGroup, 
-    `2021`
+    	Region, 
+    	IncomeGroup, 
+    	`2021`
 FROM pop_country
 WHERE Region IS NULL OR Region !=''
 ORDER BY `2021` DESC;
@@ -105,7 +105,7 @@ LIMIT 10;
 ## What's the percentage of different income levels among the top 10 countries?
 SELECT 
 	`IncomeGroup`, 
-    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+    	COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
 FROM (
 	SELECT `Country Name`, `2021` , `IncomeGroup`
 	FROM pop_country
@@ -138,7 +138,7 @@ LIMIT 10;
 ## What's the percentage of different income levels among the bottom 10 countries?
 SELECT 
 	`IncomeGroup`, 
-    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+    	COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
 FROM (
 	SELECT `Country Name`, `2021` , `IncomeGroup`
 	FROM pop_country
@@ -157,11 +157,11 @@ SELECT
     CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,1), "%") AS 2014_R,
     CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,1), "%") AS 2015_R,
     CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,1), "%") AS 2016_R,
-	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
     CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,1), "%") AS 2018_R,
     CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,1), "%") AS 2019_R,
     CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,1), "%") AS 2020_R,
-	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
+    CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
 FROM pop_country
 WHERE Region != '' OR Region IS NULL 
 ORDER BY `2021` DESC;
@@ -175,11 +175,11 @@ SELECT
     CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,2), "%") AS 2014_R,
     CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,2), "%") AS 2015_R,
     CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,2), "%") AS 2016_R,
-	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,2), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,2), "%") AS 2017_R,
     CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,2), "%") AS 2018_R,
     CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,2), "%") AS 2019_R,
     CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,2), "%") AS 2020_R,
-	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,2), "%") AS 2021_R
+    CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,2), "%") AS 2021_R
 FROM pop_country
 WHERE Region != '' OR Region IS NULL 
 ORDER BY `2021` DESC;
@@ -209,11 +209,11 @@ ORDER BY (SUM(`2021`) - SUM(`1960`))/SUM(`1960`) DESC;
 # Look at the population of United Arab Emirates and Bulgaria in 1960 and 2021.
 SELECT `Country Name`, `1960`, `2021` 
 FROM(
-		SELECT * FROM pop_country
-		WHERE Region != '' OR Region IS NULL 
-		ORDER BY `2021` DESC) AS pop_countryonly
+	SELECT * FROM pop_country
+	WHERE Region != '' OR Region IS NULL 
+	ORDER BY `2021` DESC) AS pop_countryonly
 WHERE 
-	`Country Name`= "Bulgaria" 	OR `Country Name` = "United Arab Emirates";
+	`Country Name`= "Bulgaria"  OR `Country Name` = "United Arab Emirates";
 
 
 # Create view to store data for later visualizations
@@ -229,7 +229,7 @@ SELECT * FROM top10_pop;
 CREATE VIEW top10_income AS
 SELECT 
 	`IncomeGroup`, 
-    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+    	COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
 FROM (
 	SELECT `Country Name`, `2021` , `IncomeGroup`
 	FROM pop_country
@@ -252,7 +252,7 @@ SELECT * FROM bottom10_pop;
 CREATE VIEW bottom10_income AS
 SELECT 
 	`IncomeGroup`, 
-    COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
+    	COUNT(*), CONCAT(ROUND(COUNT(IncomeGroup)/10 * 100,0), "%")
 FROM (
 	SELECT `Country Name`, `2021` , `IncomeGroup`
 	FROM pop_country
@@ -271,11 +271,11 @@ SELECT
     CONCAT(ROUND((SUM(`2014`) - SUM(`2013`))/SUM(`2013`)*100,1), "%") AS 2014_R,
     CONCAT(ROUND((SUM(`2015`) - SUM(`2014`))/SUM(`2014`)*100,1), "%") AS 2015_R,
     CONCAT(ROUND((SUM(`2016`) - SUM(`2015`))/SUM(`2015`)*100,1), "%") AS 2016_R,
-	CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
+    CONCAT(ROUND((SUM(`2017`) - SUM(`2016`))/SUM(`2016`)*100,1), "%") AS 2017_R,
     CONCAT(ROUND((SUM(`2018`) - SUM(`2017`))/SUM(`2018`)*100,1), "%") AS 2018_R,
     CONCAT(ROUND((SUM(`2019`) - SUM(`2018`))/SUM(`2018`)*100,1), "%") AS 2019_R,
     CONCAT(ROUND((SUM(`2020`) - SUM(`2019`))/SUM(`2019`)*100,1), "%") AS 2020_R,
-	CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
+    CONCAT(ROUND((SUM(`2021`) - SUM(`2020`))/SUM(`2020`)*100,1), "%") AS 2021_R
 FROM pop_country
 WHERE Region != '' OR Region IS NULL 
 ORDER BY `2021` DESC;
