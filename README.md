@@ -1,4 +1,4 @@
-# PortfolioProjects---SQL
+# PortfolioProjects---MySQL
 
 According to UN estimates, the World population reached 8 billion this month. This marks the third time of a billion-person growth milestone. Previous instances occurred in 1999 (6 billion) and 2012 (7 billion). 
 
